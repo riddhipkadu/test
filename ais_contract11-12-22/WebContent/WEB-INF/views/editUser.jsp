@@ -1,0 +1,820 @@
+<%@ page language="java" contentType="text/html; charset=ISO-8859-1"
+	pageEncoding="ISO-8859-1"%>
+<%@ taglib uri="http://www.springframework.org/tags/form" prefix="sf"%>
+<%@taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c"%>
+
+<jsp:include page="/WEB-INF/views/header.jsp"></jsp:include>
+
+
+<div class="page_cont_padd">
+	<div class="page_container">
+		<!--heading text-->
+
+		<div class="col-md-12">
+			<div class="header_button">
+				<!--<button type="button" class="btn btn-primary" id="wdt_re">Litigation Summary</button>-->
+				<h2 style="color: #054eff; font-size: 24px; float: left;">Update
+					User Information</h2>
+				<a href="./listUsers"><img src="images/DashboardIcons/backold.png" class="backButton" width="100px;"></a>
+			</div>
+			
+		</div>
+		<div style="clear: both"></div>
+		<!--first form-->
+		<sf:form class="form-horizontal" commandName="user" role="form"
+			onsubmit="return validateForm();" id="editUserForm"
+			action="./updateUser" method="post">
+
+		
+			<div class="f_form_content">
+				<h2>Update User</h2>
+
+				<div class="col-md-12">
+
+					<div class="col-md-6">
+						<div class="form-group" style="display: none;">
+							<label class="control-label col-sm-3" for="sel1">User Id:</label>
+							<div class="col-sm-9">
+								<sf:input name="user_id" path="user_id" class="form-control" id = "user_id" />
+							</div>
+						</div>
+
+						<div class="form-group">
+							<label class="control-label col-sm-3" for="sel1">First
+								Name:</label>
+							<div class="col-sm-9">
+								<sf:input name="user_first_name" path="user_first_name"
+									class="form-control" placeholder="Enter First Name" /><i class="asterisk_input"></i>
+							</div>
+						</div>
+						<div class="form-group">
+							<label class="control-label col-sm-3" for="sel1">Last
+								Name:</label>
+							<div class="col-sm-9">
+								<sf:input name="user_last_name" path="user_last_name"
+									class="form-control" placeholder="Enter Last Name" /><i class="asterisk_input"></i>
+							</div>
+						</div>
+						<div class="form-group">
+							<label class="control-label col-sm-3" for="sel1">Mobile
+								No.:</label>
+							<div class="col-sm-9">
+								<sf:input name="user_mobile" path="user_mobile"
+									class="form-control" placeholder="Enter Mobile Number" />
+							</div>
+						</div>
+
+						<div class="form-group">
+							<label class="control-label col-sm-3" for="sel1">Mail ID:</label>
+							<div class="col-sm-9">
+								<sf:input class="form-control" path="user_email"
+									name="user_email" placeholder="Enter email-id" /><i class="asterisk_input"></i>
+							</div>
+						</div>
+
+						<div class="form-group">
+							<label class="control-label col-sm-3" for="sel1">User
+								Name:</label>
+							<div class="col-sm-9">
+								<sf:input path="user_username" name="user_username"
+									class="form-control" placeholder="Enter User Name" /><i class="asterisk_input"></i>
+							</div>
+						</div>
+						<div class="form-group">
+							  <label class="control-label col-sm-3" for="sel1">User Password:</label>
+							  <div class="col-sm-9">
+							  <sf:input type="text"  name="user_userpassword" path ="user_userpassword" class="form-control" placeholder="Enter Password" readonly="true"/> <i class="asterisk_input"></i>
+							  </div>
+						</div>
+						<div class="form-group">
+							<label class="control-label col-sm-3" for="sel1">Address:</label>
+							<div class="col-sm-9">
+								<sf:textarea class="form-control" rows="4" cols="6"
+									path="user_address" name="user_address"
+									placeholder="Enter Address"></sf:textarea>
+							</div>
+						</div>
+
+					</div>
+
+					<div class="col-md-6">
+
+						<div class="form-group">
+							<label class="control-label col-sm-3" for="sel1">Entity:</label>
+							<div class="col-sm-9">
+
+								<sf:select path="user_organization_id"
+									items="${allOrganizations}" name="user_organization_id"
+									cssClass="form-control" /><i class="asterisk_input"></i>
+								<sf:errors path="user_organization_id" cssClass="errorBlock"></sf:errors>
+
+							</div>
+						</div>
+						<div class="form-group">
+							<label class="control-label col-sm-3" for="sel1">Unit:</label>
+							<div class="col-sm-9">
+
+								<sf:select path="user_location_id" items="${allLocations}"
+									cssClass="form-control" /><i class="asterisk_input"></i>
+								<sf:errors path="user_location_id" cssClass="errorBlock"></sf:errors>
+
+							</div>
+						</div>
+						<div class="form-group">
+							<label class="control-label col-sm-3" for="sel1">Function:</label>
+							<div class="col-sm-9">
+								<sf:select path="user_department_id" items="${allDepartments}"
+									cssClass="form-control" /><i class="asterisk_input"></i>
+								<sf:errors path="user_department_id" cssClass="errorBlock"></sf:errors>
+							</div>
+						</div>
+						<div class="form-group">
+							  <label class="control-label col-sm-3" for="sel1">Reporting Manager:</label>
+							  <div class="col-sm-9">
+							  <sf:select path="user_report_to" cssClass="form-control">
+								  <option value="0">--Select--</option>
+							 	<c:forEach items="${user_by_department}" var="user_by_department">
+									<sf:option value="${user_by_department.user_id}">${user_by_department.user_first_name}
+												${user_by_department.user_last_name}</sf:option>
+								</c:forEach>
+									</sf:select>
+								<sf:errors path="user_report_to" cssClass="errorBlock"></sf:errors>
+							  </div>
+						</div>
+						<div class="form-group">
+							<label class="control-label col-sm-3" for="sel1">Employee
+								ID:</label>
+							<div class="col-sm-9">
+								<sf:input type="text" placeholder="Enter Employee ID"
+									name="user_employee_id" path="user_employee_id" id = "user_employee_id"
+									class="form-control" />
+							</div>
+						</div>
+						<div class="form-group">
+							<label class="control-label col-sm-3" for="sel1">Designation:</label>
+							<div class="col-sm-9">
+
+								<sf:select class="form-control" name="user_designation_id"
+									items="${allDesignations}" path="user_designation_id" />
+
+							</div>
+						</div>
+						<div class="form-group">
+							<label class="control-label col-sm-3" for="sel1">Role:</label>
+							<div class="col-sm-9">
+								<sf:select path="user_role_id" class="form-control" name="user_role_id">
+								  <sf:option value="0">--Select--</sf:option>
+							      <sf:option value="1">Admin User</sf:option>
+							      <sf:option value="2">System User</sf:option>
+							      <sf:option value="7">Entity Head</sf:option>
+							     <%--  <sf:option value="3">POC User</sf:option>
+							      <sf:option value="4">Contract SPOC</sf:option>
+							      <sf:option value="6">Litigation SPOC</sf:option>  --%>
+								</sf:select><i class="asterisk_input"></i>
+							</div>
+						</div>
+						
+						<div class="form-group">
+						<div class="col-sm-3"></div>
+							<div class="col-sm-9 litigation_buttons">
+								<a class="btn btn-myPrimary"
+									href="./editAcccessLevel?user_id=<%=request.getParameter("user_id")%>&user_name=<%=request.getParameter("user_name")%>&userRole=<%=request.getParameter("userRole")%>">Edit
+									User Access</a>
+							</div>
+						</div>
+
+
+
+					</div>
+
+					<div class="col-md-12 litigation_buttons">
+						<br>
+
+						<center>
+							<button type="submit" class="btn btn-myPrimary">Update</button>
+							<!-- <button type="button" class="btn btn-myDefault"
+								onclick="window.location.href ='./listUsers' ">Back</button> -->
+						</center>
+
+					</div>
+
+				</div>
+			</div>
+		</sf:form>
+
+		<div style="clear: both"></div>
+
+	</div>
+</div>
+
+
+
+
+
+
+
+<jsp:include page="/WEB-INF/views/footer.jsp"></jsp:include>
+<script type="text/javascript">
+function getAllLocationForOrganization() {
+	var user_orga_id = $("select#user_organization_id option:selected").attr('value');
+
+			
+			if (user_orga_id > 0) {
+				items = {};
+				items['tmap_orga_id'] = user_orga_id;
+
+				var jsonString = JSON.stringify(items);
+
+				
+						$.ajax({
+							type : "post",
+							url : "./getAllLocationsForOrganization",
+							contentType : "application/json",
+							dataType : "html",
+							data : jsonString,
+							cache : false,
+							success : function(locationlist) {
+								//console.log(locationlist);
+
+								var locationjson = $.parseJSON(locationlist);
+								//console.log(locationjson[3]);
+								$('#user_location_id').empty();
+								$('#user_loca_row').removeAttr('hidden');
+								$('#user_loca_row').show();
+								$('#user_location_id').append(
+										'<option value = 0>--Select--</option>');
+								console.log("Length of keys:"
+										+ Object.keys(locationjson).length);
+								for (var i = 1; i <= Object.keys(locationjson).length; i++) {
+									for (i in locationjson) {
+										$('#user_location_id').append(
+												'<option value = '+i +'>'
+														+ locationjson[i]
+														+ '</option>');
+										console.log("This is from for loop"
+												+ locationjson[i]);
+									}
+
+								}
+
+							},
+							error : function(xhr, ajaxOptions, thrownError) {
+								$('#errors').html("There is error:" + thrownError);
+							}
+						});
+			} else {
+				$('#user_location_id').html('<option value="0">--Select--</option>');
+				$('#user_department_id').html('<option value="0">--Select--</option>');
+				$('#user_loca_row').hide();
+			}
+		}
+
+
+
+		function getAllDepartmentsByLocation() {
+			var user_orga_id = $("select#user_organization_id option:selected").attr('value');
+			var user_loca_id = $("select#user_location_id option:selected").attr('value');
+			if (user_loca_id > 0) {
+				items = {};
+				items["tmap_orga_id"] = user_orga_id;
+				items["tmap_loca_id"] = user_loca_id;
+
+				var jsonString = JSON.stringify(items);
+
+				
+						$.ajax({
+							type : "post",
+							url : "./getAllDepartmentsForOrgAndLoc",
+							contentType : "application/json",
+							dataType : "html",
+							data : jsonString,
+							cache : false,
+							success : function(departmentlist) {
+								//console.log(locationlist);
+
+								var departmentjson = $.parseJSON(departmentlist);
+								//console.log(locationjson[3]);
+								$('#user_department_id').empty();
+								$('#user_dept_row').removeAttr('hidden');
+								$('#user_dept_row').show();
+								$('#user_department_id').append(
+										'<option value = 0>--Select--</option>');
+								console.log("Length of keys:"
+										+ Object.keys(departmentjson).length);
+								for (var i = 1; i <= Object.keys(departmentjson).length; i++) {
+									for (i in departmentjson) {
+										$('#user_department_id').append(
+												'<option value = '+i +'>'
+														+ departmentjson[i]
+														+ '</option>');
+										console
+												.log("This is from for loop for departments"
+														+ departmentjson[i]);
+									}
+
+								}
+
+							},
+							error : function(xhr, ajaxOptions, thrownError) {
+								$('#errors').html("There is error:" + thrownError);
+							}
+						});
+			}
+			else {
+				$('#user_department_id').html('<option value="0">--Select--</option>');
+				$('#user_loca_row').hide();
+			}
+		}
+
+	
+		$("#user_department_id").change(function(){
+			
+			var user_orga_id = $("#user_organization_id").val();
+			var user_loca_id = $("#user_location_id").val();
+			var user_dept_id = $("#user_department_id").val();
+			if (user_dept_id > 0 && user_loca_id > 0 && user_dept_id > 0) {
+				
+				var data = {};
+				data['tmap_orga_id'] = user_orga_id;
+				data['tmap_loca_id'] = user_loca_id;
+				data['tmap_dept_id'] = user_dept_id;
+				var jsonString = JSON.stringify(data);
+				
+						$.ajax({
+							type : "post",
+							url : "./getAllReportingUsersByOrganizationLocationDepartment",
+							contentType : "application/json",
+							dataType : "json",
+							data : jsonString,
+							cache : false,
+							success : function(userList) {
+								var data ="";
+								data +="<option value= 0>--Select--</option>";
+								
+								$.each(userList,function(key,value){
+									//console.log("In loop");
+									data += "<option value="+value['user_id']+">"+value['user_name']+"</option>";
+								});
+								$("#user_report_to").html(data);
+							},
+							error : function(xhr, ajaxOptions, thrownError) {
+								$('#errors').html("There is error:" + thrownError);
+							}
+						});
+			}
+			else {
+				$('#user_report_to').html('<option value="0">--Select--</option>');
+			}
+		});
+
+		function validateForm() {
+        var fname = $('#user_first_name').val();
+        var lname= $('#user_last_name').val();
+        var contact=$('#user_mobile').val();
+        var mail=$('#user_email').val();
+        var oname = $('#user_organization_id').val();
+        
+        
+        //// Validation for First name
+        if (fname == 0 || fname=="") {
+       	 
+       	 $( "#user_first_name" ).attr( "data-placement", "top" );
+            $( "#user_first_name" ).attr( "data-content", "First Name required" );
+            $('#user_first_name').popover('show');
+				
+               return false;
+           }
+           else
+           {
+           	$('#user_first_name').popover('destroy');
+           }
+        if (!(isNaN(fname))) {
+        	
+             $( "#user_first_name" ).attr( "data-placement", "top" );
+             $( "#user_first_name" ).attr( "data-content", "First Name should be text" );
+             $('#user_first_name').popover('show');
+             return false;
+         }
+         else
+         {
+         	$('#user_first_name').popover('destroy');
+         }
+        
+        if (!(fname.length>2)) {
+        	// $("#oerr").innerHTML="this is invalid name ";
+             $( "#user_first_name" ).attr( "data-placement", "top" );
+             $( "#user_first_name" ).attr( "data-content", "First Name should be valid length" );
+             $('#user_first_name').popover('show');
+             return false;
+         }
+         else
+         {
+         	$('#user_first_name').popover('destroy');
+         }
+        
+        
+        ///////////// validate last name /////////////
+        
+         if (lname == 0 || lname=="") {
+       	
+       	 $( "#user_last_name" ).attr( "data-placement", "top" );
+            $( "#user_last_name" ).attr( "data-content", "Last Name required" );
+            $('#user_last_name').popover('show');
+				
+               return false;
+           }
+           else
+           {
+           	$('#user_last_name').popover('destroy');
+           }
+        if (!(isNaN(lname))) {
+        	// $("#oerr").innerHTML="this is invalid name ";
+             $( "#user_last_name" ).attr( "data-placement", "top" );
+             $( "#user_last_name" ).attr( "data-content", "Last Name should be text" );
+             $('#user_last_name').popover('show');
+             return false;
+         }
+         else
+         {
+         	$('#user_last_name').popover('destroy');
+         }
+        
+        if (!(lname.length>1)) {
+        	// $("#oerr").innerHTML="this is invalid name ";
+             $( "#user_last_name" ).attr( "data-placement", "top" );
+             $( "#user_last_name" ).attr( "data-content", "Last Name should have valid length" );
+             $('#user_last_name').popover('show');
+             return false;
+         }
+         else
+         {
+         	$('#user_last_name').popover('destroy');
+         }
+        
+       ////////////// validate mobile no  user_phone_number/////////
+        
+       /*  if (contact == 0 || contact=="") {
+       	 
+       	 $( "#user_mobile" ).attr( "data-placement", "top" );
+            $( "#user_mobile" ).attr( "data-content", "Mobile No required" );
+            $('#user_mobile').popover('show');
+				
+               return false;
+           }
+           else
+           {
+           	$('#user_mobile').popover('destroy');
+           }
+       
+       
+       
+        if (isNaN(contact)) {
+        	
+        	 $( "#user_mobile" ).attr( "data-placement", "top" );
+             $( "#user_mobile" ).attr( "data-content", "Mobile No should be numeric" );
+             $('#user_mobile').popover('show');
+             return false;
+         }
+         else
+         {
+         	$('#user_mobile').popover('destroy');
+         }
+        
+        if (!(contact.length>9)) {
+        	// $("#oerr").innerHTML="this is invalid name ";
+             $( "#user_mobile" ).attr( "data-placement", "top" );
+             $( "#user_mobile" ).attr( "data-content", "Mobile should have valid length" );
+             $('#user_mobile').popover('show');
+             return false;
+         }
+         else
+         {
+         	$('#user_mobile').popover('destroy');
+         }
+        */
+        //////////////// Mail Validation //////////////////
+        if (mail === null || mail === "") {
+            $("#user_email").attr("data-placement", "top");
+            $("#user_email").attr("data-content", "Email must be filled out");
+            $('#user_email').popover('show');
+
+            return false;
+        }else if(email_id_status ==1){
+			$("#user_email").attr("data-placement", "top");
+			$("#user_email").attr("data-content", "This email id already exist..!!");
+			$('#user_email').popover('show');
+			return false; 
+        } else
+        {
+            $('#user_email').popover('destroy');
+        }
+        /// validate email format
+        var atpos = mail.indexOf("@");
+        var dotpos = mail.lastIndexOf(".");
+        if (atpos < 1 || dotpos < (atpos + 2) || (dotpos + 2) >= mail.length)
+        {
+            $("#user_email").attr("data-placement", "top");
+            $("#user_email").attr("data-content", "Not a valid e-mail address");
+            $('#user_email').popover('show');
+            // alert("Not a valid e-mail address");
+            return false;
+        } else
+        {
+            $('#user_email').popover('destroy');
+        }
+        
+       /* 
+        
+        //  validate addresss textarea..
+        
+        
+        if ( $('#user_address').val() == 0 || $('#user_address').val()=="") {
+        	 
+        	 $( "#user_address" ).attr( "data-placement", "top" );
+             $( "#user_address" ).attr( "data-content", "Address required" );
+             $('#user_address').popover('show');
+ 				
+                return false;
+            }
+            else
+            {
+            	$('#user_address').popover('destroy');
+            }
+          if (!(isNaN($('#user_address').val()))) {
+         	
+              $( "#user_address" ).attr( "data-placement", "top" );
+              $( "#user_address" ).attr( "data-content", "Address should be text" );
+              $('#user_address').popover('show');
+              return false;
+          }
+          else
+          {
+          	$('#user_address').popover('destroy');
+          } 
+         
+         if (!(($('#user_address').val()).length>2)) {
+         	// $("#oerr").innerHTML="this is invalid name ";
+              $( "#user_address" ).attr( "data-placement", "top" );
+              $( "#user_address" ).attr( "data-content", "Address should be valid length" );
+              $('#user_address').popover('show');
+              return false;
+          }
+          else
+          {
+          	$('#user_address').popover('destroy');
+          }
+ */
+        
+        // validate organization drop down
+        
+          if (oname == 0) {
+            	 
+            	 $( "#user_organization_id" ).attr( "data-placement", "top" );
+                 $( "#user_organization_id" ).attr( "data-content", " Select Entity " );
+                 $('#user_organization_id').popover('show');
+				
+                    return false;
+                }
+              
+             else
+             {
+             	$('#user_organization_id').popover('destroy');
+             }
+        
+        /// validate unit dropdown
+          if ($( "#user_location_id" ).val() == 0) {
+         	 
+         		$( "#user_location_id" ).attr( "data-placement", "top" );
+             	$( "#user_location_id" ).attr( "data-content", " Select Unit" );
+              	$('#user_location_id').popover('show');
+				
+                 return false;
+             }
+           
+          else
+          {
+          	$('#user_location_id').popover('destroy');
+          }
+          
+        
+	// Validate Function dropdown
+		if ($("#user_department_id").val() == 0) {
+
+			$("#user_department_id").attr("data-placement", "top");
+			$("#user_department_id").attr("data-content", " Select Function ");
+			$('#user_department_id').popover('show');
+
+			return false;
+		}
+
+		else {
+			$('#user_department_id').popover('destroy');
+		}
+
+		//Validation for Reporting manager id
+	/* 	if ($("#user_report_to").val() == 0) {
+
+				$("#user_report_to").attr("data-placement", "top");
+				$("#user_report_to").attr("data-content", " Select Reporting Manager ");
+				$('#user_report_to').popover('show');
+
+				return false;
+			}
+
+			else {
+				$('#user_report_to').popover('destroy');
+			} */
+	
+		//// Validation for employee id
+		/* if ($('#user_employee_id').val() == 0 || $('#user_employee_id').val() == "") {
+
+			$("#user_employee_id").attr("data-placement", "top");
+			$("#user_employee_id").attr("data-content", "Employee id required");
+			$('#user_employee_id').popover('show');
+
+			return false;
+		} else if(emp_status ==1){
+			$("#user_employee_id").attr("data-placement", "top");
+			$("#user_employee_id").attr("data-content", "Employee id allready exist..!!");
+			$('#user_employee_id').popover('show');
+			return false;
+		}else{
+			$('#user_employee_id').popover('destroy');
+		}
+		
+
+		if (!(($('#user_employee_id').val()).length > 2)) {
+			// $("#oerr").innerHTML="this is invalid name ";
+			$("#user_employee_id").attr("data-placement", "top");
+			$("#user_employee_id").attr("data-content",
+					"Employee id should be valid length");
+			$('#user_employee_id').popover('show');
+			return false;
+		} else {
+			$('#user_employee_id').popover('destroy');
+		}
+ */
+	}
+
+	$(document).ready(function() {
+
+		$("#user_organization_id").on('change', getAllLocationForOrganization);
+		$("#user_location_id").on('change', getAllDepartmentsByLocation);
+
+		// validation destroy popups
+		$('#user_first_name').click(function() {
+			$('#user_first_name').popover('destroy');
+		});
+
+		$('#user_last_name').click(function() {
+			$('#user_last_name').popover('destroy');
+		});
+
+		$('#user_email').click(function() {
+			$('#user_email').popover('destroy');
+		});
+
+		$('#user_mobile').click(function() {
+			$('#user_mobile').popover('destroy');
+		});
+
+		$('#user_organization_id').click(function() {
+			$('#user_organization_id').popover('destroy');
+		});
+
+		$('#user_location_id').click(function() {
+			$('#user_location_id').popover('destroy');
+		});
+
+		$('#user_department_id').click(function() {
+			$('#user_department_id').popover('destroy');
+		});
+
+		$('#user_employee_id').click(function() {
+			$('#user_employee_id').popover('destroy');
+		});
+		$('#user_address').click(function() {
+			$('#user_address').popover('destroy');
+		});
+		
+	});
+</script>
+<script>
+var email_id_status;
+$("#user_email").change(function(){ 
+	 //$('#user_email').val($.trim($('#user_email').val()));
+	  var email_id = $("#user_email").val();
+	  var user_id = $("#user_id").val();
+
+		if(email_id !='' && email_id!=null ){ // && !typeof emp_id === 'undefined'
+			
+			    items = {};
+				items["user_id"] = user_id;
+				items["email_id"] = email_id;
+
+				var jsonString = JSON.stringify(items);
+				$.ajax({
+					type : "post",
+					url : "./isEmailIdExist",
+					contentType : "application/json",
+					dataType : "html",
+					data : jsonString,
+					cache : false,
+					success : function(result) {
+						if(result==0){
+							email_id_status = 0;
+							$('#user_email').popover('destroy');
+						}else{
+							email_id_status = 1;
+							$("#user_email").attr("data-placement", "top");
+							$("#user_email").attr("data-content", "This Email id is already exist..!!");
+							$('#user_email').popover('show');
+						}
+
+					},
+					error : function(xhr, ajaxOptions, thrownError) {
+						$('#errors').html("There is error:" + thrownError);
+					}
+				});
+		}
+});
+
+var emp_status;
+  $("#user_employee_id").change(function(){
+	  //$('#user_employee_id').val($.trim($('#user_employee_id').val()));
+	  var emp_id = $("#user_employee_id").val();
+	  var user_id = $("#user_id").val();
+	 
+ 
+		if(emp_id !='' && emp_id !=null && user_id !=0){
+			
+			    items = {};
+				items["user_id"] = user_id;
+				items["emp_id"] = emp_id;
+
+				var jsonString = JSON.stringify(items);
+				$.ajax({
+					type : "post",
+					url : "./checkExistEmployeeId",
+					contentType : "application/json",
+					dataType : "html",
+					data : jsonString,
+					cache : false,
+					success : function(res) {
+						if(res==0){
+							emp_status = 0;
+							$('#user_employee_id').popover('destroy');
+						}else{
+							emp_status = 1;
+							$("#user_employee_id").attr("data-placement", "top");
+							$("#user_employee_id").attr("data-content", "Employee id allready exist..!!");
+							$('#user_employee_id').popover('show');
+						}
+
+					},
+					error : function(xhr, ajaxOptions, thrownError) {
+						$('#errors').html("There is error:" + thrownError);
+					}
+				});
+		}
+  });
+
+  var user_name_status;
+  $("#user_username").keyup(function(){ 
+	  //$('#user_username').val($.trim($('#user_username').val()));
+	  var user_name = $("#user_username").val();
+	  var user_id = 0;
+ 
+		if(user_name !='' && user_name!=null ){ // && !typeof emp_id === 'undefined'
+			
+			    items = {};
+				items["user_id"] = user_id;
+				items["user_name"] = user_name;
+
+				var jsonString = JSON.stringify(items);
+				$.ajax({
+					type : "post",
+					url : "./isUserNameExist",
+					contentType : "application/json",
+					dataType : "html",
+					data : jsonString,
+					cache : false,
+					success : function(result) {
+						if(result==0){
+							user_name_status = 0;
+							$('#user_username').popover('destroy');
+						}else{
+							user_name_status = 1;
+							$("#user_username").attr("data-placement", "top");
+							$("#user_username").attr("data-content", "Username already exists..!!");
+							$('#user_username').popover('show');
+						}
+
+					},
+					error : function(xhr, ajaxOptions, thrownError) {
+						$('#errors').html("There is error:" + thrownError);
+					}
+				});
+		}
+  });
+</script>

@@ -1,0 +1,121 @@
+package lcmt.dao.impl;
+
+import java.util.List;
+
+import javax.persistence.EntityManager;
+import javax.persistence.PersistenceContext;
+import javax.persistence.Query;
+import org.springframework.transaction.annotation.Transactional;
+
+import org.springframework.stereotype.Repository;
+
+import lcmt.dao.SendMailDao;
+
+@Repository(value = "sendMailDao")
+@Transactional
+
+public class SendMailDaoImpl implements SendMailDao {
+
+	@PersistenceContext
+	private EntityManager em;
+
+	// Method created by : Tejashri Zurunge
+	// Method purpose : send mail to assign person while creating new query
+	@SuppressWarnings("unchecked")
+	@Override
+	public List<Object> getQueryDetailsByQueryId(int query_id) {
+		try {
+			String sql = "SELECT orga_name,loca_name,dept_name,assin.user_first_name , assin.user_last_name as assigned_to,assin.user_email as ass_user_mail,quer_from_id,quer.quer_query_date,quer.quer_reply_date,quer.quer_reminder_date, quer.quer_id, quer.quer_query FROM mst_query quer JOIN mst_organization ON orga_id = quer.quer_entity_id "
+					+ " JOIN mst_location ON mst_location.loca_id = quer.quer_unit_id "
+					+ " JOIN mst_department ON dept_id = quer.quer_function_id "
+					+ " JOIN mst_user assin ON assin.user_id = quer.quer_assigned_to "
+					+ " WHERE quer.quer_id ="+ query_id;
+			Query query = em.createNativeQuery(sql);
+			return query.getResultList();
+
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		return null;
+	}
+
+	// Method created by : Tejashri Zurunge
+	// Method purpose : send mail to assign person while creating new litigation
+	@SuppressWarnings("unchecked")
+	@Override
+	public List<Object> getLitigationDetailsByLitigationId(int liti_id) {
+		try {
+			String sql = "SELECT liti_id,liti_against_by_id,liti_type_name,liti_case_reference_no,liti_case_filing_date,liti_external_counsel_id,liti_party_by,liti_court, court_name , liti_amount_involved , liti_brief_description,liti_status,liti_client_liti_id, liti_involved_amt_currency "
+					+ " FROM mst_litigation join mst_litigation_type on mst_litigation_type.liti_type_id = mst_litigation.liti_type_id "
+					//+ " join mst_user on user_id = liti_internally_handled_by "
+					//+ " join mst_external_counsel on exte_coun_id = liti_external_counsel_id "
+					+ " join mst_court ON court_id = liti_court where liti_id = "
+					+ liti_id;
+			Query query = em.createNativeQuery(sql);
+			return query.getResultList();
+
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		return null;
+	}
+
+	// Method created by : Tejashri Zurunge
+	// Method purpose : send mail to assign person while creating new
+	// pre-execution contract
+	@SuppressWarnings("unchecked")
+	@Override
+	public List<Object> getPreExecutionDetailsByContractId(int cont_id) {
+		try {
+			String sql = " SELECT orga_name, loca_name, dept_name, cont_agreement_name, cont_requested_by_user_id, cont_requested_date,cont_expected_date,u.user_first_name , u.user_last_name as resposibleperson, u.user_email, cont_targetted_date,cont_id,cont_status "
+					+ " FROM mst_contracts join mst_organization on orga_id = cont_orga_id "
+					+ " join mst_location on loca_id = cont_loca_id "
+					+ " join mst_department on dept_id = cont_dept_id "
+					+ " join mst_user u on u.user_id = cont_responsible_user_id where cont_id = "+ cont_id;
+			Query query = em.createNativeQuery(sql);
+			return query.getResultList();
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+
+		return null;
+	}
+
+	// Method created by : Tejashri Zurunge
+	// Method purpose : send mail to assign person while creating new legal notice
+	@SuppressWarnings("unchecked")
+	@Override
+	public List<Object> getLegalNoticeDetailsByLegalNoticeId(int lega_noti_id) {
+		try {
+			String sql = "SELECT orga.orga_name,loca.loca_name,dept.dept_name,leg_cat.lega_noti_category_name,lega_noti.lega_noti_id, lega_noti_dated,lega_noti_recived_on, lega_noti_reply_deadline, usr.user_first_name, usr.user_last_name as fullname, usr.user_email as email, lega_noti_reminder_date FROM mst_legal_notice lega_noti "
+					+ " JOIN mst_organization orga ON orga.orga_id = lega_noti.lega_noti_entity_id  "
+					+ " JOIN mst_location loca ON loca.loca_id = lega_noti.lega_noti_unit_id "
+					+ " JOIN mst_department  dept ON dept.dept_id = lega_noti.lega_noti_function_id "
+					+ " JOIN mst_user usr ON usr.user_id = lega_noti.lega_noti_assigned_to_id"
+					+ " JOIN mst_legal_notice_category leg_cat ON leg_cat.lega_noti_category_id = lega_noti.lega_noti_category_id"
+					+ " where lega_noti.lega_noti_id = "+lega_noti_id ;
+			Query query = em.createNativeQuery(sql);
+			return query.getResultList();
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		return null;
+	}
+
+	@SuppressWarnings("unchecked")
+	@Override
+	public List<Object> getSarfaesiActDetailsBySarfActId(int sarfact_id) {
+		// TODO Auto-generated method stub
+		try {
+			String sql = "select sarf.sarf_act_id ,sarf.sarf_loan_no,sarf.sarf_borrower,sarf.sarf_security_type,sarf.sarf_security_Interest,sarf.sarf_npa_date,sarf.sarf_filling_date,sarf.sarf_NotiIssue_date,sarf.sarf_Executor_id,sarf.sarf_mgr_name,user.user_email as email  from mst_sarfaesiact sarf JOIN mst_user user ON user.user_id = sarf.sarf_Executor_id  where sarf.sarf_act_id = "+ sarfact_id;
+			Query query = em.createNativeQuery(sql);
+			//System.out.println(sql);
+			return query.getResultList();
+
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		return null;
+		
+	}
+}

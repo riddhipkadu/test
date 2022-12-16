@@ -1,0 +1,894 @@
+package lcmt.dao.impl;
+
+import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Properties;
+
+import javax.mail.Message;
+import javax.mail.PasswordAuthentication;
+import javax.mail.Session;
+import javax.mail.Transport;
+import javax.mail.internet.InternetAddress;
+import javax.mail.internet.MimeMessage;
+import javax.persistence.EntityManager;
+import javax.persistence.PersistenceContext;
+import javax.persistence.Query;
+import javax.persistence.TypedQuery;
+import javax.servlet.http.HttpSession;
+import org.springframework.transaction.annotation.Transactional;
+
+import org.json.simple.JSONObject;
+import org.json.simple.parser.JSONParser;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.stereotype.Repository;
+
+import lcmt.dao.UserDao;
+import lcmt.domain.User;
+import lcmt.service.RandomPasswordGenService;
+import lcmt.service.UtilitiesService;
+
+/*
+ * Author: Mahesh Kharote
+ * Date: 24/02/2016
+ * Updated By: Mugdha Chandratre
+ * Updated Date: 23/02/2016
+ * 
+ * */
+
+@Repository(value = "userDao")
+@Transactional
+public class UserDaoImpl implements UserDao {
+
+	@PersistenceContext
+	private EntityManager em;
+
+	@Autowired 
+	RandomPasswordGenService randomPasswordGenService;
+
+	@Autowired
+	UtilitiesService utilitiesService;
+
+	private @Value("#{config['mail_user_name'] ?: 'null'}") String username;
+	private @Value("#{config['mail_password'] ?: 'null'}") String password;
+	private @Value("#{config['mail_smtp_host'] ?: 'null'}") String hostName;
+	private @Value("#{config['mail_smtp_port'] ?: 'null'}") String portNo;
+	private @Value("#{config['mail_from'] ?: 'null'}") String mailFrom;
+	private @Value("#{config['project_name'] ?: 'null'}") String projectName;
+	private @Value("#{config['project_url'] ?: 'null'}") String url;
+
+	// Method Created By: Mahesh Kharote 23/02/2016
+	// Method Purpose: Authenticate user
+	@Override
+	public String authenticateUser(String username, String password,HttpSession session) {
+		try {
+			String sql = "SELECT user_username FROM mst_user where user_username ='"+ username +"' AND user_enable_status = 1" ;
+			
+			Query query = em.createNativeQuery(sql);
+		//	System.out.println("dao" + query.getResultList() );
+			if(!query.getResultList().isEmpty()){
+				String sqlNew = "SELECT * FROM mst_user where user_username =  '"+ username +"' AND user_enable_status = 1" ;
+				Query queryNew = em.createNativeQuery(sqlNew, User.class);
+				if(queryNew.getSingleResult() != null){
+					User user = (User) queryNew.getSingleResult();
+                
+					if(user != null){
+						if(user.getUser_username().equalsIgnoreCase(username) && user.getUser_enable_status().equals("1")){
+							if(user.getUser_userpassword().equals(password)){
+								if(user.getUser_default_password_changed().equals("0")){
+									session.setAttribute("firstLogin", "1");
+								}
+								else{
+									session.setAttribute("firstLogin", "0");
+								}
+								session.setAttribute("sess_user_role", user.getUser_role_id());
+								session.setAttribute("sess_user_report_to", user.getUser_report_to());
+								return Integer.toString(user.getUser_id());
+							}
+							else{
+								return "Incorrect password";
+							}
+						}
+						else{
+							return "Incorrect username";
+						}
+					}
+					else{
+						return "Incorrect username";
+					}
+				}
+				else{
+					return "Incorrect username";
+				}
+			}
+
+			else{
+				return "Incorrect username";
+			}
+
+		} catch (Exception e) {
+			e.printStackTrace();
+			return null;
+		}
+
+	}
+
+	// Method Created By: Mugdha Chandratre 01/03/2016
+	// Method Purpose: Save the user in the database
+	@Override
+	public void persist(Object obj) {
+		try {
+			em.persist(obj);
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+
+	}
+
+	// Method Created By: Mugdha Chandratre 01/03/2016
+	// Method Purpose: Update the particular user in the database
+	@Override
+	public void updateUser(User user) {
+		try {
+			em.merge(user);
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+
+	}
+
+	// Method Created By: Mugdha Chandratre 01/03/2016
+	// Method Purpose: Get the particular user by id from the database
+	@Override
+	public User getUserById(int user_id) {
+		try {
+			String sql = "SELECT * FROM mst_user where user_id = " + user_id;
+			Query query = em.createNativeQuery(sql, User.class);
+			if (!query.getResultList().isEmpty()) {
+				return (User) query.getResultList().get(0);
+			}
+
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		return null;
+	}
+
+	// Method Created By: Mugdha Chandratre 24/02/2016
+	// Method Purpose: Fetch the list of all users
+	// Update by mahesh kharote
+	// Reason: Hide super admin from users list
+	@Override
+	public <T> List<T> getAll(Class<T> clazz) {
+		try {
+			TypedQuery<T> query = em.createQuery(" from " + clazz.getName() + " where user_id > 1 ", clazz);
+			return query.getResultList();
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		return null;
+	}
+
+	// Method Created By: Mahesh Kharote 23/02/2016
+	// Method Purpose: Get all performer as well as reviewer
+	@Override
+	public <T> List<T> getAllBoth(Class<T> clazz) {
+		try {
+			TypedQuery<T> query = em.createQuery(" from " + clazz.getName() + " where user_role_id = 1 ", clazz);
+			return query.getResultList();
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		return null;
+	}
+
+	// Method Created By: Mahesh Kharote 23/02/2016
+	// Method Purpose: Get all performer
+	@Override
+	public <T> List<T> getAllPerformer(Class<T> clazz) {
+		try {
+			TypedQuery<T> query = em.createQuery(" from " + clazz.getName() + " where user_role_id = 2 ", clazz);
+			return query.getResultList();
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		return null;
+	}
+
+	// Method Created By: Mahesh Kharote 23/02/2016
+	// Method Purpose: Get all reviewer
+	@Override
+	public <T> List<T> getAllReviewer(Class<T> clazz) {
+		try {
+			TypedQuery<T> query = em.createQuery(" from " + clazz.getName() + " where user_role_id = 3 ", clazz);
+			return query.getResultList();
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		return null;
+	}
+
+	// Method Created By: Mahesh Kharote 23/02/2016
+	// Method Purpose: Get all reviewer
+	@SuppressWarnings("unchecked")
+	@Override
+	public <T> List<T> getUserFullNameById(int user_id) {
+		try {
+			String sql = "SELECT * FROM mst_user where user_id = " + user_id;
+			Query query = em.createNativeQuery(sql, User.class);
+			return query.getResultList();
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		return null;
+	}
+
+	@Override
+	public <T> List<T> getAllDepartmentAccessible(int user_id) {
+		return null;
+	}
+
+	// Method Created By: Harshad Padole on 25/02/2016
+	// Method Purpose: approve or disapprove user
+	@Override
+	public int approveDisapproveUser(int user_id, int user_status) {
+		try {
+			String sql = "Update mst_user SET user_approval_status='" + user_status + "' where user_id=" + user_id;
+			Query query = em.createNativeQuery(sql);
+			return query.executeUpdate();
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		return 0;
+	}
+
+	// Method Created By: Harshad Padole on 25/02/2016
+	// Method Purpose: enable or disable user
+	@Override
+	public int enableDisableUser(int user_id, int user_status) {
+		try {
+			String sql = "Update mst_user SET user_enable_status='" + user_status + "' where user_id=" + user_id;
+			Query query = em.createNativeQuery(sql);
+			return query.executeUpdate();
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		return 0;
+	}
+
+	// Method Created : Harshad Padole
+	// Method Purpose : Get mapped access using ajax call
+	@SuppressWarnings("unchecked")
+	@Override
+	public List<Object> getUserAccess(int org_id, int loc_id, int dept_id) {
+		try {
+			String sql = "SELECT ent.enti_orga_id,ent.enti_loca_id,ent.enti_dept_id,orga.orga_name,loca.loca_name,dept.dept_name from cfg_entity_mapping as ent JOIN  mst_organization as orga ON orga.orga_id=ent.enti_orga_id JOIN mst_location as loca ON loca.loca_id=ent.enti_loca_id JOIN mst_department as dept ON dept.dept_id = ent.enti_dept_id where enti_orga_id="
+					+ org_id + " ";
+			if (loc_id != 0) {
+				sql += " AND enti_loca_id=" + loc_id;
+			}
+			if (dept_id != 0) {
+				sql += " AND enti_dept_id=" + dept_id;
+			}
+			Query query = em.createNativeQuery(sql);
+			return query.getResultList();
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+
+		return null;
+	}
+
+	// Method Created By: Harshad padole 29/02/2016
+	// Method Purpose: Fetch the list of all users
+	@SuppressWarnings("unchecked")
+	@Override
+	public <T> List<T> getAllUserNotSetAccess(Class<T> clazz) {
+		try {
+			// TypedQuery<T> query = em.createQuery(" from "+clazz.getName(),
+			// clazz);
+			String sql = "SELECT * FROM mst_user where user_id NOT IN(select umap_user_id from cfg_user_entity_mapping)";
+			Query query = em.createNativeQuery(sql);
+			return query.getResultList();
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		return null;
+	}
+
+	// Method Created By: Harshad padole 29/02/2016
+	// Method Purpose: get user access by userid
+	@SuppressWarnings("unchecked")
+	@Override
+	public List<Object> getUserAccessByUserId(int user_id) {
+		try {
+			String sql = "SELECT umap.umap_id,umap.umap_orga_id,umap.umap_loca_id ,umap.umap_dept_id,orga.orga_name,loca.loca_name,dept.dept_name from cfg_user_entity_mapping as umap JOIN  mst_organization as orga ON orga.orga_id=umap.umap_orga_id JOIN mst_location as loca ON loca.loca_id=umap.umap_loca_id JOIN mst_department as dept ON dept.dept_id = umap.umap_dept_id where umap_user_id="
+					+ user_id + " AND umap_enable_status=" + 1;
+			Query query = em.createNativeQuery(sql);
+			return query.getResultList();
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		return null;
+	}
+
+	// Method Created By: Harshad padole 2/03/2016
+	// Method Purpose: get organization for user
+	@SuppressWarnings("unchecked")
+	@Override
+	public List<Object> getOrgaForUserAccess(int user_id) {
+		try {
+			String sql = "SELECT distinct enti_orga_id,orga_name FROM cfg_entity_mapping join mst_organization ON orga_id = enti_orga_id where NOT exists ( select umap_orga_id from cfg_user_entity_mapping where umap_orga_id = enti_orga_id AND umap_loca_id = enti_loca_id AND umap_dept_id = enti_dept_id AND umap_user_id ='"
+					+ user_id + "' AND umap_enable_status = 1)";
+			Query query = em.createNativeQuery(sql);
+			return query.getResultList();
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		return null;
+	}
+
+	// Method Created By: Harshad padole 2/03/2016
+	// Method Purpose: get location for user by user id and org_id
+
+	@SuppressWarnings("unchecked")
+	@Override
+	public List<Object> getLocaForUserAccess(int user_id, int orga_id) {
+		try {
+			String sql = "SELECT distinct enti_orga_id,orga_name,loca_id,loca_name FROM cfg_entity_mapping join mst_organization ON orga_id = enti_orga_id JOIN mst_location ON loca_id = enti_loca_id where NOT exists ( select umap_orga_id from cfg_user_entity_mapping where umap_orga_id = enti_orga_id AND umap_loca_id = enti_loca_id AND umap_dept_id = enti_dept_id AND umap_user_id ='"
+					+ user_id + "' AND umap_orga_id ='" + orga_id + "' AND umap_enable_status = 1) AND enti_orga_id = '"
+					+ orga_id + "'";
+			Query query = em.createNativeQuery(sql);
+			return query.getResultList();
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		return null;
+	}
+
+	// Method Created By: Harshad padole 2/03/2016
+	// Method Purpose: get department for user by user id and org_id and loca_id
+	@SuppressWarnings("unchecked")
+	@Override
+	public List<Object> getDeptForUserAccess(int user_id, int orga_id, int loca_id) {
+		try {
+			String sql = "SELECT distinct enti_orga_id,orga_name,loca_id,loca_name,dept_id,dept_name FROM cfg_entity_mapping join mst_organization ON orga_id = enti_orga_id JOIN mst_location ON loca_id = enti_loca_id JOIN mst_department ON dept_id = enti_dept_id where NOT exists ( select umap_orga_id from cfg_user_entity_mapping where umap_orga_id = enti_orga_id AND umap_loca_id = enti_loca_id AND umap_dept_id = enti_dept_id AND umap_user_id = '"
+					+ user_id + "' AND umap_enable_status = 1 AND umap_orga_id = '" + orga_id + "' AND umap_loca_id = '"
+					+ loca_id + "' ) AND enti_orga_id = '" + orga_id + "' AND enti_loca_id = '" + loca_id + "' ";
+			Query query = em.createNativeQuery(sql);
+			return query.getResultList();
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		return null;
+	}
+
+	// Method Created By: Harshad padole 2/03/2016
+	// Method Purpose: disable User Mapped access
+	@Override
+	public int enableDisableUmap(int umap_id, int umap_status) {
+		try {
+			// String sql = "Update cfg_user_entity_mapping SET
+			// umap_enable_status='"+umap_status+"' where umap_id="+umap_id;
+			String sql = "Delete from cfg_user_entity_mapping where umap_id=" + umap_id;
+			Query query = em.createNativeQuery(sql);
+			return query.executeUpdate();
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		return 0;
+	}
+
+	// Method Created By: Harshad padole 2/03/2016
+	// Method Purpose: get remaining access to user while editing user access
+	@SuppressWarnings("unchecked")
+	@Override
+	public List<Object> getRemainUserAccess(int user_id, int orga_id, int loca_id, int dept_id) {
+		try {
+			String sql = "SELECT distinct enti_orga_id,orga_name,loca_id,loca_name,dept_id,dept_name FROM cfg_entity_mapping join mst_organization ON orga_id = enti_orga_id JOIN mst_location ON loca_id = enti_loca_id JOIN mst_department ON dept_id = enti_dept_id where NOT exists ( select umap_orga_id from cfg_user_entity_mapping where umap_orga_id = enti_orga_id AND umap_loca_id = enti_loca_id AND umap_dept_id = enti_dept_id AND umap_user_id = '"
+					+ user_id + "' AND umap_enable_status = 1 ) AND enti_orga_id = '" + orga_id + "' " + " ";
+			if (loca_id != 0) {
+				sql += "AND enti_loca_id = '" + loca_id + "'" + " ";
+			}
+			if (dept_id != 0) {
+				sql += "AND enti_dept_id = '" + dept_id + "'  ";
+			}
+			Query query = em.createNativeQuery(sql);
+			return query.getResultList();
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		return null;
+	}
+
+	// Method Created : Harshad Padole
+	// Method Purpose : Check employee id exist or not
+
+	@Override
+	public int CheckEmployeeExist(int user_id, String emp_id) {
+
+		try {
+			// int cnt = 0;
+			String sql = "select count(*) as emp from mst_user where user_employee_id='" + emp_id + "' " + " ";
+			if (user_id != 0) {
+				sql += " AND user_id !=" + user_id;
+			}
+			Query query = em.createNativeQuery(sql);
+			String cnt = query.getResultList().get(0).toString();
+
+			return Integer.parseInt(cnt);
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		return 0;
+	}
+
+	// Method Created : Harshad Padole
+	// Method Purpose : Check employee id exist or not
+
+	@Override
+	public int isEmailIdExist(int user_id, String email_id) {
+
+		try {
+
+			String sql = "select count(*) as email from mst_user where user_email='" + email_id + "' " + " ";
+			if (user_id != 0) {
+				sql += " AND user_id !=" + user_id;
+			}
+			Query query = em.createNativeQuery(sql);
+			String cnt = query.getResultList().get(0).toString();
+
+			return Integer.parseInt(cnt);
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		return 0;
+	}
+
+	// Method Created : Harshad Padole
+	// Method Purpose : Check username exist or not
+	@Override
+	public int isUserNameExist(int user_id, String user_name) {
+
+		try {
+
+			String sql = "select count(*) as username from mst_user where user_username='" + user_name + "' " + " ";
+			if (user_id != 0) {
+				sql += " AND user_id !=" + user_id;
+			}
+			Query query = em.createNativeQuery(sql);
+			String cnt = query.getResultList().get(0).toString();
+
+			return Integer.parseInt(cnt);
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		return 0;
+	}
+
+	// Method Created By: Mahesh Kharote 22/03/2016
+	// Method Purpose: Authenticate user
+	@SuppressWarnings("unchecked")
+	@Override
+	public <T> List<T> getUsersByOrganization(int orga_id) {
+		try {
+			String sql = "SELECT DISTINCT user_id, user_added_by, user_address, user_approval_status, user_created_at, user_department_id, user_designation_id, user_email, user_employee_id, user_enable_status, user_first_name, user_last_name, user_location_id, user_mobile, user_organization_id,user_report_to, user_role_id, user_username, user_userpassword, profile_pic FROM mst_user JOIN cfg_user_entity_mapping ON umap_user_id = user_id WHERE user_organization_id > 0 AND umap_orga_id = "
+					+ orga_id;
+			Query query = em.createNativeQuery(sql, User.class);
+			if (!query.getResultList().isEmpty()) {
+				return query.getResultList();
+			}
+
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		return null;
+	}
+
+	// Method Created By: Mahesh Kharote 22/03/2016
+	// Method Purpose: Authenticate user
+	@SuppressWarnings("unchecked")
+	@Override
+	public <T> List<T> getUsersByOrganizationLocation(int orga_id, int loca_id) {
+		try {
+			String sql = "SELECT DISTINCT user_id, user_added_by, user_address, user_approval_status, user_created_at, user_department_id, user_designation_id, user_email, user_employee_id, user_enable_status, user_first_name, user_last_name, user_location_id, user_mobile, user_organization_id,user_report_to, user_role_id, user_username, user_userpassword, profile_pic, user_default_password_changed FROM mst_user JOIN cfg_user_entity_mapping ON umap_user_id = user_id WHERE user_organization_id > 0 AND umap_orga_id = "
+					+ orga_id + " AND umap_loca_id = " + loca_id;
+			Query query = em.createNativeQuery(sql, User.class);
+			if (!query.getResultList().isEmpty()) {
+				return query.getResultList();
+			}
+
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		return null;
+	}
+
+	// Method Created By: Mahesh Kharote 22/03/2016
+	// Method Purpose: Authenticate user
+	@SuppressWarnings("unchecked")
+	@Override
+	public <T> List<T> getUsersByOrganizationLocationDepartment(int orga_id, int loca_id, int dept_id) {
+		try {
+			String sql = "SELECT DISTINCT user_id, user_added_by, user_address, user_approval_status, user_created_at, user_department_id, user_designation_id, user_email, user_employee_id, user_enable_status, user_first_name, user_last_name, user_location_id, user_mobile, user_organization_id,user_report_to, user_role_id, user_username, user_userpassword, profile_pic, user_default_password_changed FROM mst_user JOIN cfg_user_entity_mapping ON umap_user_id = user_id WHERE user_organization_id > 0 AND umap_orga_id = "
+					+ orga_id + " AND umap_loca_id = " + loca_id + " AND umap_dept_id = " + dept_id +"  AND user_role_id != 3";
+			Query query = em.createNativeQuery(sql, User.class);
+			if (!query.getResultList().isEmpty()) {
+				return query.getResultList();
+			}
+
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		return null;
+	}
+
+	// Method Created : Harshad Padole
+	// Method Purpose : Get performer and reviewer by user access and task
+
+	@SuppressWarnings("unchecked")
+	@Override
+	public <T> List<T> getPerformerReviewerByAccess(int user_id, String json) {
+		try {
+			List<Integer> existing = new ArrayList<Integer>();
+			List<T> SearchListToSend = new ArrayList<>();
+			JSONObject jsonObject = (JSONObject) new JSONParser().parse(json);
+			int orga_id = Integer.parseInt(jsonObject.get("orga_id").toString());
+			int loca_id = Integer.parseInt(jsonObject.get("loca_id").toString());
+			int dept_id = Integer.parseInt(jsonObject.get("dept_id").toString());
+
+			String sql = "select DISTINCT cfg_task_user_mapping.tmap_pr_user_id,cfg_task_user_mapping.tmap_rw_user_id from cfg_task_user_mapping WHERE cfg_task_user_mapping.tmap_orga_id = "
+					+ orga_id;
+			if (loca_id != 0) {
+				sql += "  AND cfg_task_user_mapping.tmap_loca_id = " + loca_id;
+			}
+			if (dept_id != 0) {
+				sql += "  AND cfg_task_user_mapping.tmap_dept_id = " + dept_id;
+			}
+			sql += "  AND cfg_task_user_mapping.tmap_pr_user_id = " + user_id;
+			Query query = em.createNativeQuery(sql);
+			if (query.getResultList().size() != 0) {
+				List<Object> PerRev = query.getResultList();
+				Iterator<Object> itr = PerRev.iterator();
+				while (itr.hasNext()) {
+					Object[] objects = (Object[]) itr.next();
+					String sql1 = "select `user_first_name`,`user_last_name`,`user_role_id`,user_id FROM `mst_user` where user_id ="
+							+ objects[0] + " ";
+					sql1 += "UNION" + " ";
+					sql1 += "select `user_first_name`,`user_last_name`,`user_role_id`,user_id FROM `mst_user` where user_id ="
+							+ objects[1];
+					Query query2 = em.createNativeQuery(sql1);
+
+					if (query2.getResultList().size() != 0) {
+						List<Object> PerRevData = query2.getResultList();
+						Iterator<Object> itr1 = PerRevData.iterator();
+						while (itr1.hasNext()) {
+							Object[] objects1 = (Object[]) itr1.next();
+							if (existing.contains(Integer.parseInt(objects1[3].toString()))) {
+								// do nothing
+							} else {
+								JSONObject jsonObject1 = new JSONObject();
+								jsonObject1.put("user_name", objects1[0] + " " + objects1[1]);
+								jsonObject1.put("user_role", objects1[2]);
+								jsonObject1.put("user_id", objects1[3]);
+								SearchListToSend.add((T) jsonObject1);
+								existing.add(Integer.parseInt(objects1[3].toString()));
+							}
+
+						}
+					}
+				}
+			}
+
+			String AsPerAccess = "select DISTINCT cfg_task_user_mapping.tmap_pr_user_id,cfg_task_user_mapping.tmap_rw_user_id from cfg_task_user_mapping JOIN cfg_user_entity_mapping ON cfg_user_entity_mapping.umap_orga_id = cfg_task_user_mapping.tmap_orga_id AND cfg_user_entity_mapping.umap_loca_id = cfg_task_user_mapping.tmap_loca_id AND cfg_user_entity_mapping.umap_dept_id = cfg_task_user_mapping.tmap_dept_id WHERE cfg_user_entity_mapping.umap_user_id ="+ user_id+"	AND cfg_task_user_mapping.tmap_orga_id = "+ orga_id;
+			if (loca_id != 0) {
+				AsPerAccess += "  AND cfg_task_user_mapping.tmap_loca_id = " + loca_id;
+			}
+			if (dept_id != 0) {
+				AsPerAccess += "  AND cfg_task_user_mapping.tmap_dept_id = " + dept_id;
+			}
+			Query AsPerAccessquery = em.createNativeQuery(AsPerAccess);
+			if (AsPerAccessquery.getResultList().size() != 0) {
+				List<Object> PerRevAccess = AsPerAccessquery.getResultList();
+				Iterator<Object> iterator = PerRevAccess.iterator();
+				while (iterator.hasNext()) {
+					Object[] getId = (Object[]) iterator.next();
+					String getName = "select `user_first_name`,`user_last_name`,`user_role_id`,user_id FROM `mst_user` where user_id ="
+							+ getId[0] + " ";
+					getName += "UNION" + " ";
+					getName += "select `user_first_name`,`user_last_name`,`user_role_id`,user_id FROM `mst_user` where user_id ="
+							+ getId[1];
+					Query query2 = em.createNativeQuery(getName);
+					if (query2.getResultList().size() != 0) {
+						List<Object> GetResult = query2.getResultList();
+						Iterator<Object> iterator2 = GetResult.iterator();
+						while (iterator2.hasNext()) {
+							Object[] accObject = (Object[]) iterator2.next();
+							if (existing.contains(Integer.parseInt(accObject[3].toString()))) {
+								// do nothing
+							} else {
+								JSONObject PerRevList = new JSONObject();
+								PerRevList.put("user_name", accObject[0] + " " + accObject[1]);
+								PerRevList.put("user_role", accObject[2]);
+								PerRevList.put("user_id", accObject[3]);
+								SearchListToSend.add((T) PerRevList);
+								existing.add(Integer.parseInt(accObject[3].toString()));
+							}
+						}
+					}
+				}
+			}
+			return SearchListToSend;
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		return null;
+	}
+
+	@SuppressWarnings("unchecked")
+	@Override
+	public List<User> getUserProfile(int userId) {
+		try {
+			String sql = "SELECT user_first_name, user_last_name, user_username, CASE user_role_id WHEN 1 THEN 'Admin User' WHEN 2 THEN 'Normal User' WHEN 3 THEN 'POC User' WHEN 4 THEN 'Contract SPOC User' WHEN 5 THEN 'Super Admin User' WHEN 6 THEN 'Litigation SPOC User' ELSE 'Roles not set !' END as Roles, user_employee_id, user_mobile, user_email, ( SELECT desi_name FROM mst_designation WHERE desi_id = user_designation_id ) as Designation, ( SELECT orga_name FROM mst_organization WHERE orga_id = user_organization_id ) as Organization, ( SELECT loca_name FROM mst_location WHERE loca_id = user_location_id ) as Location, ( SELECT dept_name FROM mst_department WHERE dept_id = user_department_id ) as Department,profile_pic FROM mst_user WHERE user_id = ?";
+			Query query = em.createNativeQuery(sql);
+			query.setParameter(1, userId);
+			return query.getResultList();
+
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		return null;
+	}
+
+	@Override
+	public void updateUserPic(String pic,int userId) {
+		try {
+			String sql = "UPDATE mst_user SET profile_pic = ? WHERE user_id = ?";
+			Query query = em.createNativeQuery(sql);
+			query.setParameter(1, pic);
+			query.setParameter(2, userId);
+			query.executeUpdate();
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+	}
+
+	@Override
+	public String getProfilePic(int userId) {
+		try {
+			String sql = "SELECT profile_pic FROM mst_user WHERE user_id = ?";
+			Query query = em.createNativeQuery(sql);
+			query.setParameter(1, userId);
+			return query.getResultList().get(0).toString();
+		} catch (Exception e) {
+			return "NA";
+		}
+	}
+
+	@Override
+	public String getOriginalPassword(int userId) {
+		try {
+			String sql = "SELECT user_userpassword FROM mst_user WHERE user_id = ?";
+			Query query = em.createNativeQuery(sql);
+			query.setParameter(1, userId);
+			return query.getResultList().get(0).toString();
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		return null;
+	}
+
+	@Override
+	public int changeNewPassword(String newPassword, int userId) {
+		try {
+			String sql = "UPDATE mst_user SET user_userpassword = ?,user_default_password_changed = 1  WHERE user_id = ?";
+			Query query = em.createNativeQuery(sql);
+			query.setParameter(1, newPassword);
+			query.setParameter(2, userId);
+			query.executeUpdate();
+
+			return 1;
+		} catch (Exception e) {
+			e.printStackTrace();
+			return 0;
+		}
+	}
+
+	//Method Created :Harshad Padole
+	//Method Purpose : Check task exist for user or not while removing access
+	@Override
+	public String CheckTaskExistForUser(String json, HttpSession session) {
+		try {
+
+			/*SONObject jsonObject = (JSONObject) new JSONParser().parse(json);
+			int umap_id = Integer.parseInt(jsonObject.get("umap_id").toString());
+			//int user_id = Integer.parseInt(session.getAttribute("sess_user_id").toString());			 
+			String sql_per = "SELECT count(*) FROM `cfg_task_user_mapping` join cfg_user_entity_mapping ON cfg_user_entity_mapping.umap_orga_id = cfg_task_user_mapping.tmap_orga_id AND cfg_user_entity_mapping.umap_loca_id = cfg_task_user_mapping.tmap_loca_id AND cfg_user_entity_mapping.umap_dept_id = cfg_task_user_mapping.tmap_dept_id AND cfg_user_entity_mapping.umap_user_id = cfg_task_user_mapping.tmap_pr_user_id WHERE cfg_user_entity_mapping.umap_id = "+umap_id;
+			Query query = em.createNativeQuery(sql_per);
+
+			String sql_rev = "SELECT count(*) FROM `cfg_task_user_mapping` join cfg_user_entity_mapping ON cfg_user_entity_mapping.umap_orga_id = cfg_task_user_mapping.tmap_orga_id AND cfg_user_entity_mapping.umap_loca_id = cfg_task_user_mapping.tmap_loca_id AND cfg_user_entity_mapping.umap_dept_id = cfg_task_user_mapping.tmap_dept_id AND cfg_user_entity_mapping.umap_user_id = cfg_task_user_mapping.tmap_rw_user_id WHERE cfg_user_entity_mapping.umap_id = "+umap_id;
+			Query query1 = em.createNativeQuery(sql_rev);
+
+			int total = Integer.parseInt(query.getResultList().get(0).toString()) + Integer.parseInt(query1.getResultList().get(0).toString());*/
+			return String.valueOf(0);
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		return null;
+	}
+
+	@Override
+	public String resetPassword(String user_username, String user_mailId) {
+		try {
+			String sql ="SELECT count(*) FROM mst_user WHERE user_username = ? AND user_email = ?";
+			Query query = em.createNativeQuery(sql);
+			query.setParameter(1, user_username);
+			query.setParameter(2, user_mailId);
+			if(Integer.parseInt(query.getResultList().get(0).toString()) == 1){
+
+				//Generate New Password
+				String newPassword = randomPasswordGenService.generateRandomString();
+
+				String sql_reset_password ="UPDATE mst_user SET user_userpassword = ? ,user_default_password_changed = 0 WHERE user_username = ? AND user_email = ?";
+
+				Query query_reset_password = em.createNativeQuery(sql_reset_password);
+				query_reset_password.setParameter(1, newPassword);
+				query_reset_password.setParameter(2, user_username);
+				query_reset_password.setParameter(3, user_mailId);
+
+				if(query_reset_password.executeUpdate() == 1){
+
+
+					Properties props = new Properties();
+					props.put("mail.smtp.auth", "true");
+					props.put("mail.smtp.starttls.enable", "true");
+					props.put("mail.smtp.host", hostName);
+					props.put("mail.smtp.port", portNo);
+
+					Session session = Session.getInstance(props, new javax.mail.Authenticator() {
+						protected PasswordAuthentication getPasswordAuthentication() {
+							return new PasswordAuthentication(username, password);
+						}
+					});
+
+
+					try {
+						String email_body = "Dear "+ user_mailId +","
+								+ "<br/><br/>Your password has been reset, Details are as follows,<br/>"
+								+ "Password : <Strong>"+ newPassword +"</strong>"
+								+ "<br/><br/>"
+								+ "<a href='"+url+"'>Click here Login to Litigation Managment Tool </a><br/>This is a system generated mail. Please do not reply to this mail.<br/>";
+
+						InternetAddress[] address = new InternetAddress[1];
+						address[0] = new InternetAddress(user_mailId);
+
+						Message message = new MimeMessage(session);
+						message.setFrom(new InternetAddress(mailFrom));
+						message.setRecipients(Message.RecipientType.TO,address);
+						message.setSubject("Reset Password");
+						message.setContent(email_body, "text/html; charset=utf-8");
+						Transport.send(message);
+						utilitiesService.addMailToLog(user_mailId,"Reset Password");
+						return "true";
+					} 
+					catch (Exception e) 
+					{
+						e.printStackTrace();
+					}
+				}else{
+					return "fail";
+				}
+			}else{
+				return "fail";
+			}
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		return "fail";
+	}
+
+	@SuppressWarnings("unchecked")
+	@Override
+	public <T> List<T> getAllReportingUsersByOrganizationLocationDepartment(int orga_id, int loca_id, int dept_id) {
+		try {
+			String sql = "SELECT DISTINCT user_id, user_added_by, user_address, user_approval_status, user_created_at, user_department_id, user_designation_id, user_email, user_employee_id, user_enable_status, user_first_name, user_last_name, user_location_id, user_mobile, user_organization_id,user_report_to, user_role_id, user_username, user_userpassword, profile_pic, user_default_password_changed FROM mst_user JOIN cfg_user_entity_mapping ON umap_user_id = user_id WHERE user_organization_id > 0 AND umap_orga_id = "
+					+ orga_id + " AND umap_loca_id = " + loca_id + " AND umap_dept_id = " + dept_id +" ";
+			Query query = em.createNativeQuery(sql, User.class);
+			if (!query.getResultList().isEmpty()) {
+				return query.getResultList();
+			}
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+
+		return null;
+	}
+
+
+	// Method Created By: Mahesh Kharote 23/02/2016
+	// Method Purpose: Authenticate user from Harmony for angel
+	@Override
+	public String authenticateUserPeopleSoft(String empno, HttpSession session) {
+		try {
+			System.out.println("In dao impl from Harmony");
+
+			if(empno != ""){
+				String sqlNew = "SELECT * FROM mst_user where user_employee_id =  '"+ empno +"'" ;
+				Query queryNew = em.createNativeQuery(sqlNew, User.class);
+				if(queryNew.getSingleResult() != null){
+					User user = (User) queryNew.getSingleResult();
+
+					if(user != null){
+
+
+						if(user.getUser_default_password_changed().equals("0")){
+							session.setAttribute("firstLogin", "1");
+						}
+						else{
+							session.setAttribute("firstLogin", "0");
+						}
+						session.setAttribute("sess_user_role", user.getUser_role_id());
+						return Integer.toString(user.getUser_id());
+
+
+					}
+					else{
+						return null;
+					}
+				}
+				else{
+					return null;
+				}
+			}
+			else{
+				return null;
+			}
+		} catch (Exception e) {
+			e.printStackTrace();
+			return null;
+		}
+	}
+
+	@SuppressWarnings("unchecked")
+	@Override
+	public List<User> getAdminMailId() {
+		try {
+			String sql = " Select user_email from mst_user where user_role_id = 1";
+			Query query = em.createNativeQuery(sql);
+			return query.getResultList();
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		return null;
+	}
+
+	@SuppressWarnings("unchecked")
+	@Override
+	public <T> List<T> getAllPOCUser() {
+		try {
+			String sql = "SELECT DISTINCT user_id, user_added_by, user_address, user_approval_status, user_created_at, user_department_id, user_designation_id, user_email, user_employee_id, user_enable_status, user_first_name, user_last_name, user_location_id, user_mobile, user_organization_id,user_report_to, user_role_id, user_username, user_userpassword, profile_pic, user_default_password_changed FROM mst_user JOIN cfg_user_entity_mapping ON umap_user_id = user_id WHERE "
+					+ " user_role_id = 3";
+			Query query = em.createNativeQuery(sql, User.class);
+			if (!query.getResultList().isEmpty()) {
+				return query.getResultList();
+			}
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		return null;
+	}
+	
+	@SuppressWarnings("unchecked")
+	public List<String> getUserFullName(){
+		try{
+			String sql ="Select user_first_name From mst_user" ;
+			
+			Query query = em.createNativeQuery(sql);
+			return query.getResultList();
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		return null;
+	}
+}

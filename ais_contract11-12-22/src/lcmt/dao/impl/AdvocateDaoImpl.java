@@ -1,0 +1,222 @@
+package lcmt.dao.impl;
+
+import java.util.List;
+
+import javax.persistence.EntityManager;
+import javax.persistence.PersistenceContext;
+import javax.persistence.Query;
+import javax.transaction.Transactional;
+
+import org.json.simple.JSONObject;
+import org.json.simple.parser.JSONParser;
+import org.springframework.stereotype.Repository;
+
+import lcmt.dao.AdvocateDao;
+import lcmt.domain.Advocate;
+
+@Repository(value = "advocateDao")
+@Transactional
+public class AdvocateDaoImpl implements AdvocateDao {
+
+	@PersistenceContext
+	private EntityManager em;
+
+	// Method Created : Tejashri Zurunge
+	// Method Purpose : Save Advocate
+	@Override
+	public void persist(Advocate advocate) {
+		try {
+			em.persist(advocate);
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+	}
+
+	// Method Created : Tejashri Zurunge
+	// Method Purpose : Get all Advocate
+	@SuppressWarnings("unchecked")
+	@Override
+	public List<Object> getAll() {
+		try {
+			String sql = " SELECT advo_id,advo_name,lawf_id,lawf_name,advo_mobile_no,advo_email_id,advo_address,area_expe_id,area_expe_name"
+					+ " FROM mst_advocate JOIN mst_area_of_expertise ON area_expe_id = advo_area_of_expertise "
+					+ " JOIN mst_law_firm ON mst_law_firm.lawf_id = advo_law_firm ";
+			Query query = em.createNativeQuery(sql);
+			return query.getResultList();
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		return null;
+	}
+
+	// Method Created : Tejashri Zurunge
+	// Method Purpose : Get Advocate by Id
+	@Override
+	public Advocate getAdvocateById(int advo_id) {
+		try {
+			String sql = "Select * from mst_advocate where advo_id = " + advo_id;
+			Query query = em.createNativeQuery(sql, Advocate.class);
+			if (!(query.getResultList()).isEmpty()) {
+				return (Advocate) query.getResultList().get(0);
+			}
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		return null;
+	}
+
+	// Method Created : Tejashri Zurunge
+	// Method Purpose : Update Advocate
+	@Override
+	public void updateAdvocate(Advocate advocate) {
+		try {
+			em.merge(advocate);
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+	}
+
+	// Method Created : Tejashri Zurunge
+	// Method Purpose : Delete Advocate
+	@Override
+	public int deleteAdvocate(int advo_id) {
+		try {
+			String sql = "delete from mst_advocate where advo_id = " + advo_id;
+			Query query = em.createNativeQuery(sql);
+			int deleteCount = query.executeUpdate();
+			return deleteCount;
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		return 0;
+	}
+
+	// Method Created : Tejashri Zurunge
+	// Method Purpose : Search Advocate
+	@SuppressWarnings("unchecked")
+	@Override
+	public List<Object> searchAdvocate(int advo_law_firm, int advo_city, int advo_area_of_expertise,int advo_country_id,int advo_state_id,int advo_advocate_id) {
+		try {
+			String sql = "SELECT advo_id, advo_name, lawf_id, lawf_name, advo_mobile_no, advo_email_id, area_expe_id, area_expe_name from mst_advocate JOIN mst_area_of_expertise ON area_expe_id = advo_area_of_expertise "
+					+ "JOIN mst_law_firm ON mst_law_firm.lawf_id = advo_law_firm where advo_country_id = "+ advo_country_id;
+			
+			
+			if (advo_state_id > 0) {
+				sql += " AND advo_state_id = " + advo_state_id;
+			}
+			if (advo_city > 0) {
+				sql += " AND advo_city_id = " + advo_city;
+			}
+			if (advo_law_firm > 0) {
+				sql += " AND advo_law_firm = " + advo_law_firm;
+			}
+			if (advo_advocate_id > 0) {
+				sql += " AND advo_id = " + advo_advocate_id;
+			}
+			if (advo_area_of_expertise > 0) {
+				sql += " AND advo_area_of_expertise = " + advo_area_of_expertise;
+			}
+			Query query = em.createNativeQuery(sql);
+			return query.getResultList();
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		return null;
+	}
+
+	// Method Created : Tejashri Zurunge
+	// Method Purpose : Get Advocate by Law Firm Id
+	@SuppressWarnings("unchecked")
+	@Override
+	public List<Advocate> getAdvocateByLawFirmId(int law_firm_id) {
+		try {
+			String sql = "select * from mst_advocate where advo_law_firm =" + law_firm_id;
+			Query query = em.createNativeQuery(sql, Advocate.class);
+			return query.getResultList();
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		return null;
+	}
+
+	// Method Created : Harshad Padole
+	// Method Purpose : Get only countries which exist in mst advocate table
+	@SuppressWarnings("unchecked")
+	@Override
+	public List<Object> getJoinedCountries() {
+		try {
+			String sql = "select Distinct coun_id,coun_name from mst_countries JOIN mst_advocate ON advo_country_id = coun_id";
+			Query  query = em.createNativeQuery(sql);
+			return query.getResultList();
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		return null;
+	}
+
+	// Method Created : Harshad Padole
+	// Method Purpose : Get only State which exist in mst advocate table by country id
+	@SuppressWarnings("unchecked")
+	@Override
+	public List<Object> getJoinedStateByCountryId(int country_id) {
+		try {
+			String sql = "select Distinct  stat_id,stat_name from mst_states JOIN mst_advocate ON advo_state_id = stat_id where advo_country_id="+country_id;
+			Query  query = em.createNativeQuery(sql);
+			return query.getResultList();
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		return null;
+	}
+
+	// Method Created : Harshad Padole
+	// Method Purpose : Get only City which exist in mst advocate table by state id
+	@SuppressWarnings("unchecked")
+	@Override
+	public List<Object> getJoinedCityByStateId(int state_id) {
+		try {
+			String sql = "select Distinct city_id,city_name from mst_cities JOIN mst_advocate ON advo_city_id = city_id where advo_state_id="+state_id;
+			Query  query = em.createNativeQuery(sql);
+			return query.getResultList();
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		return null;
+	}
+
+	@Override
+	public int isAdvocateNameExist(String json) {
+		try {
+			JSONObject jsonObject = (JSONObject) new JSONParser().parse(json);
+			String Advo_name = jsonObject.get("advo_name").toString();
+			String sql = "select count(*) from mst_advocate where advo_name = ?";
+			Query query = em.createNativeQuery(sql);
+			query.setParameter(1, Advo_name);
+			String count = query.getResultList().get(0).toString();
+			return Integer.parseInt(count);
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		return 0;
+	}
+
+	// Method Created: Tejashri Zurunge
+	// Method Purpose: check dependancy 	
+	@SuppressWarnings("unchecked")
+	@Override
+	public List<Object> checkDependancyAdvocate(int advo_id) {
+		try {
+			String sql = " Select  case when liti.liti_advocate_id > 0 then 1 else 0 END as liti_advo, "
+					+ " case when advo.ladv_advocate_id > 0 then 1 else 0 END as fees_advo from mst_advocate advocate "
+					+ " left join mst_litigation liti on advocate.advo_id = liti.liti_advocate_id "
+					+ " left join trn_litigation_advocate_fees advo on advocate.advo_id = advo.ladv_advocate_id "
+					+ " where advocate.advo_id = "+advo_id+" limit 1";
+			Query query = em.createNativeQuery(sql);
+			return query.getResultList();
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		return null;
+	}
+
+}
