@@ -51,6 +51,7 @@ public class SendMailServiceImpl implements SendMailService {
 	SimpleDateFormat sdfOut = new SimpleDateFormat("dd-MM-yyyy");
 
 	// Method created by : Tejashri Zurunge
+	// Method created by : Tejashri Zurunge
 	// Method purpose : send mail to assign person while creating new query
 	@Override
 	public void sendQueryAssignMailToResponsiblePerson(int query_id, HttpSession session) {
