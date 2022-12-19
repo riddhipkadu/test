@@ -1,0 +1,7 @@
+mail_user_name =
+mail_password = 
+mail_smtp_host = 116.206.105.72
+mail_smtp_port = 587
+mail_from = 
+project_name = lexlitigation
+project_url = http://103.224.247.51:8080/lexlitigation/ 
