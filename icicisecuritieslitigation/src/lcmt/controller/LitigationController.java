@@ -563,8 +563,7 @@ public class LitigationController {
 			int loca = litigation.getLiti_loca_id();
 			int dept = litigation.getLiti_dept_id();
 			modelAndView.addObject("user_list", userService.getUsersByOrganizationLocationDepartment(orga, loca, dept));
-			modelAndView.addObject("user_lists",
-					userService.getUsersByOrganizationLocationDepartment(orga, loca, dept));
+			//modelAndView.addObject("user_lists",userService.getUsersByOrganizationLocationDepartment(orga, loca, dept));
 			modelAndView.addObject("hearing_stage_doc", litigationService.getHearingStageDocById(hear_stage_id));
 			modelAndView.addObject("listStages", stagesService.getAll());
 			modelAndView.addObject("allLawFirm", lawFirmService.getAllLawFirm());
