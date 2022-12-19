@@ -33,7 +33,7 @@ public class AdvocateController {
 	@Autowired
 	EntityMappingService entityMappingService;
 
-	// Method Created :Akash JAdhav
+
 	// Method Created :Akash JAdhav
 	
 	// Method Purpose : Add Advocate
