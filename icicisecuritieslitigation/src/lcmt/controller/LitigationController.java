@@ -559,6 +559,10 @@ public class LitigationController {
 	// Method Purpose : show add hearing stage page
 	@RequestMapping(value = "/editHearingStage", method = RequestMethod.GET)
 	public ModelAndView editHearingStage(int hear_stage_id) {
+		
+		
+		
+		
 		try {
 			HearingStage hearingStage = litigationService.getHearingDetailsByStageId(hear_stage_id);
 			ModelAndView modelAndView = new ModelAndView("editHearingStage", "editHearingStage", hearingStage);

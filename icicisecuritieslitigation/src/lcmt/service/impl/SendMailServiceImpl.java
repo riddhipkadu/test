@@ -159,6 +159,8 @@ public class SendMailServiceImpl implements SendMailService {
 	public void sendLitigationHandledMailToInternallyHandledPerson(int liti_id, HttpSession session) {
 		try {
 			
+			
+			
 			List<Object> res = sendMailDao.getLitigationDetailsByLitigationId(liti_id);
 			if (res != null) {
 				String email_body = "";

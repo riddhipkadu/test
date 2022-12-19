@@ -34,6 +34,7 @@ public class AdvocateController {
 	EntityMappingService entityMappingService;
 
 	// Method Created :Akash JAdhav
+	
 	// Method Purpose : Add Advocate
 	@RequestMapping(value = "/addAdvocate", method = RequestMethod.GET)
 	public ModelAndView addAdvocate() {
