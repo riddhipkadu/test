@@ -2209,6 +2209,7 @@ public class LitigationServiceImpl implements LitigationService {
 		try {
 			System.out.println("Session1 " + session);
 			String next_hearing_date = "";
+			String liti_third_responsible_person_name="";
 			SimpleDateFormat sdfIn = new SimpleDateFormat("yyyy-MM-dd");
 			SimpleDateFormat sdfOut = new SimpleDateFormat("dd-MM-yyyy");
 			List<LitigationReference> sendLitst = new ArrayList<>();
@@ -2325,6 +2326,25 @@ public class LitigationServiceImpl implements LitigationService {
 								+ " On " + "  " + sdfOut.format(sdfIn.parse(object[37].toString())));
 					else
 						litigationReference.setLiti_updated_by("NA");
+					
+					if (object[33] != null)
+						litigationReference.setLiti_assigned_name(userService.getUserFullNameById(Integer.parseInt(object[33].toString())));
+					else
+						litigationReference.setLiti_assigned_name("NA");
+					
+					if (object[34] != null)
+						litigationReference.setLiti_secondary_responsible_name(userService.getUserFullNameById(Integer.parseInt(object[34].toString())));
+					else
+						litigationReference.setLiti_secondary_responsible_name("NA");
+					
+					if (object[35] != null)
+						litigationReference.setLiti_third_responsible_person_name(userService.getUserFullNameById(Integer.parseInt(object[35].toString())));
+					else
+						litigationReference.setLiti_third_responsible_person_name("NA");
+					
+					
+				
+					
 
 					/*
 					 * if (object[37] != null)

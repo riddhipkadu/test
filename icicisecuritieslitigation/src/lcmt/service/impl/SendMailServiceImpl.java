@@ -205,7 +205,7 @@ public class SendMailServiceImpl implements SendMailService {
 					//intern_handle_person_mail = objects[8].toString();
 				    String liti_opposite_party = objects[6].toString();
 					String liti_court = objects[8].toString();
-					String liti_amount_involved = objects[9].toString() + " " + objects[13].toString();
+					String liti_amount_involved = objects[9].toString();
 					String liti_brief_description = objects[10].toString();
 					String assigned_by = session.getAttribute("fullName").toString();
 					email_body += "<tr>" 
@@ -256,6 +256,8 @@ public class SendMailServiceImpl implements SendMailService {
 				} catch (AddressException e) {
 					e.printStackTrace();
 				}
+				
+				System.out.println("mail  " +email_body);
 				sendMail("Litigation Assigned", email_body, addressCC, addressCC, litigation_id);
 			}
 		} catch (Exception e) {
